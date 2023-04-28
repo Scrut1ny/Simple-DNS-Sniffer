@@ -2,7 +2,7 @@ import subprocess
 import os
 
 # Clear the terminal
-os.system('clear')
+os.system('cls' if os.name == 'nt' else 'clear')
 
 try:
     # Check if scapy is installed, if not install it silently
