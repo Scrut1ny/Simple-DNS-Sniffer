@@ -1,31 +1,27 @@
 import subprocess
 import os
-from scapy.all import *
+import sys
+import importlib.util
 
-# Clear the terminal
-os.system('cls' if os.name == 'nt' else 'clear')
-
-# Ensure Scapy is installed
-def ensure_scapy_installed():
-    try:
-        from scapy.all import *
-    except ImportError:
-        subprocess.call(['pip', 'install', '-qy', 'scapy'])
-        from scapy.all import *
-
-# Function to handle DNS packets
-def dns_sniffer(pkt):
-    if pkt.haslayer(DNS) and pkt.getlayer(DNS).qr == 0:
-        query_name = pkt.getlayer(DNS).qd.qname.decode().strip('.')
-        print(f"DNS Query Request: \033[94m{query_name}\033[m")
+def ensure_scapy():
+    if not importlib.util.find_spec("scapy"):
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'scapy'])
 
 def main():
-    ensure_scapy_installed()
+    ensure_scapy()
+    from scapy.all import sniff, DNS
+    
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    def handler(pkt):
+        if pkt.haslayer(DNS) and pkt[DNS].qr == 0:
+            domain = pkt[DNS].qd.qname.decode().rstrip('.')
+            print(f"DNS Query: \033[94m{domain}\033[0m")
+
     try:
-        # Start sniffing on UDP port 53 for DNS traffic
-        sniff(filter="udp port 53", prn=dns_sniffer)
+        sniff(filter="udp port 53", prn=handler, store=False)
     except KeyboardInterrupt:
-        print('\nExiting...')
+        print("\n\033[93mExiting...\033[0m")
 
 if __name__ == "__main__":
     main()
